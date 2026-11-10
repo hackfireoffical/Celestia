@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.11-brightgreen?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft 1.21.11"/>
+  <img src="https://img.shields.io/badge/Minecraft-1.21.x%20%2F%20Iris-brightgreen?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft 1.21.x / Iris"/>
   <img src="https://img.shields.io/badge/Iris-Compatible-blue?style=for-the-badge" alt="Iris"/>
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License"/>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=social" alt="Stars"/>
-  <img src="https://img.shields.io/github/forks/hackfireoffical/Celestia?style=social" alt="Forks"/>
-  <img src="https://img.shields.io/github/watchers/hackfireoffical/Celestia?style=social" alt="Watchers"/>
-  <img src="https://img.shields.io/github/issues/hackfireoffical/Celestia" alt="Issues"/>
-  <img src="https://img.shields.io/github/license/hackfireoffical/Celestia" alt="License"/>
-  <img src="https://img.shields.io/github/last-commit/hackfireoffical/Celestia" alt="Last Commit"/>
+  <a href="https://github.com/hackfireoffical/Celestia/stargazers"><img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=flat&logo=github&label=Stars&color=yellow" alt="Stars"/></a>
+  <a href="https://github.com/hackfireoffical/Celestia/network/members"><img src="https://img.shields.io/github/forks/hackfireoffical/Celestia?style=flat&logo=github&label=Forks&color=blue" alt="Forks"/></a>
+  <a href="https://github.com/hackfireoffical/Celestia/watchers"><img src="https://img.shields.io/github/watchers/hackfireoffical/Celestia?style=flat&logo=github&label=Watchers&color=lightgrey" alt="Watchers"/></a>
+  <a href="https://github.com/hackfireoffical/Celestia/issues"><img src="https://img.shields.io/github/issues/hackfireoffical/Celestia?style=flat&label=Issues" alt="Issues"/></a>
+  <img src="https://img.shields.io/github/license/hackfireoffical/Celestia?style=flat" alt="License"/>
+  <img src="https://img.shields.io/github/last-commit/hackfireoffical/Celestia?style=flat" alt="Last Commit"/>
 </p>
 
 <h1 align="center">✨ Celestia Mobile</h1>
@@ -39,9 +39,21 @@
 
 ---
 
-## 📦 Installation
+## 📦 Compatibility
 
-1. Install **Fabric 1.21.11** + **Sodium** + **Iris** (matching versions).
+Works with **Iris + Sodium** on multiple Minecraft versions (check [Iris on Modrinth](https://modrinth.com/mod/iris) for the exact Iris/Sodium pair for your game version).
+
+Typical support:
+- **1.21.x** (including 1.21.11 and recent 1.21 builds)
+- Newer Iris-supported releases as they appear on Modrinth
+
+Always match **Iris + Sodium** versions to your Minecraft version from Modrinth.
+
+---
+
+## 📥 Installation
+
+1. Install **Fabric** (or NeoForge) + **Sodium** + **Iris** for your Minecraft version (see Modrinth links above).
 2. Download the latest release ZIP (or clone this repo and zip the contents).
 3. Place the **`.zip`** (do **not** unzip) into your `shaderpacks` folder.
 4. In-game: **Options → Video Settings → Shader Packs → Celestia**.
@@ -101,7 +113,7 @@ If you enjoy Celestia Mobile, please **star** the repo and consider sharing it!
 
 <p align="center">
   <a href="https://github.com/hackfireoffical/Celestia/stargazers">
-    <img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=for-the-badge" alt="Star this repo"/>
+    <img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=for-the-badge&logo=github" alt="Star this repo"/>
   </a>
 </p>
 

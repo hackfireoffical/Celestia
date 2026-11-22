@@ -55,16 +55,16 @@ zip -r Celestia_Mobile.zip shaders LICENSE README.md
 
 ## Automated compatibility checks
 
-GitHub Actions runs the compatibility workflow whenever shader files or this README change. It discovers the Minecraft versions that currently have both **Iris and Sodium Fabric releases**, limited to **1.20.1 through 26.3**, then creates a separate check for every matching version.
+GitHub Actions runs the compatibility workflow whenever shader files or this README change. It discovers the Minecraft versions that currently have both **Iris and Sodium Fabric releases**, limited to **1.20.1 through 26.3**, then checks every matching version against the same shared shader source. Celestia is not split into per-version shader folders or separate downloads: one universal ZIP is produced after the complete version matrix passes.
 
 For each version, the workflow:
 - Confirms that Modrinth lists a Fabric release of Iris and Sodium for that exact Minecraft version.
 - Expands the shader pack's shared GLSL includes and statically compiles every vertex and fragment stage.
-- Builds an installable `Celestia_Mobile.zip` artifact after the complete matrix passes.
+- Builds one installable `Celestia_Mobile.zip` artifact after the complete matrix passes. The ZIP includes a `COMPATIBILITY.txt` file listing the Minecraft versions checked by that run.
 
 **What PASS means:** the loader ecosystem publishes matching releases and Celestia's shader stages pass GLSL static compilation. This is a useful automated compatibility gate, but it is **not a full Minecraft launch or visual-render test**. It cannot prove that the shader looks correct in-game, or that every GPU/Android driver supports every effect. Those still need manual testing in Iris on the target Minecraft version and device.
 
-To run it manually, open the repository's **Actions → Celestia compatibility → Run workflow**. The generated ZIP is available in the successful run's **Artifacts** section.
+To run it manually, open the repository's **Actions → Celestia compatibility → Run workflow**. The single universal ZIP is available in the successful run's **Artifacts** section. There are no separate per-version ZIPs.
 
 ## Current limitations
 

@@ -1,124 +1,70 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.x%20%2F%20Iris-brightgreen?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft 1.21.x / Iris"/>
-  <img src="https://img.shields.io/badge/Iris-Compatible-blue?style=for-the-badge" alt="Iris"/>
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License"/>
-</p>
-
-<p align="center">
-  <a href="https://github.com/hackfireoffical/Celestia/stargazers"><img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=flat&logo=github&label=Stars&color=yellow" alt="Stars"/></a>
-  <a href="https://github.com/hackfireoffical/Celestia/network/members"><img src="https://img.shields.io/github/forks/hackfireoffical/Celestia?style=flat&logo=github&label=Forks&color=blue" alt="Forks"/></a>
-  <a href="https://github.com/hackfireoffical/Celestia/watchers"><img src="https://img.shields.io/github/watchers/hackfireoffical/Celestia?style=flat&logo=github&label=Watchers&color=lightgrey" alt="Watchers"/></a>
-  <a href="https://github.com/hackfireoffical/Celestia/issues"><img src="https://img.shields.io/github/issues/hackfireoffical/Celestia?style=flat&label=Issues" alt="Issues"/></a>
-  <img src="https://img.shields.io/github/license/hackfireoffical/Celestia?style=flat" alt="License"/>
-  <img src="https://img.shields.io/github/last-commit/hackfireoffical/Celestia?style=flat" alt="Last Commit"/>
-</p>
-
-<h1 align="center">✨ Celestia Mobile</h1>
-
-<p align="center">
-  <strong>Lightweight, beautiful Iris shader pack for Minecraft — optimised for mobile & low-end devices</strong>
-</p>
-
-<p align="center">
-  Procedural skies • Realtime sun & moon lighting • Soft coloured shadows • Entity shadows • Animated water<br/>
-  Golden sunsets • Twinkling stars • Milky Way • Comets • Meteors • Auroras
-</p>
+<div align="center">
+  <h1>✨ Celestia Mobile</h1>
+  <strong>See more. Feel the atmosphere. Keep it mobile.</strong><br><br>
+  Lightweight Iris shader pack for Minecraft Java Edition, built with Android and lower-end GPUs in mind.
+</div>
 
 ---
 
-## 🚀 Features
+## What is Celestia?
 
-| Category | Highlights |
-|----------|------------|
-| **Sky** | Procedural gradient, golden sunrise/sunset, soft moving clouds, thousands of twinkling stars, Milky Way band, rare comets with dust tails, meteor showers, animated auroras |
-| **Lighting** | Realtime directional sun + moon shading, soft coloured shadows (sky bounce + warm residual), entity contact shadows, block glow (torches, lava, lanterns…) |
-| **Water** | Lightweight reflections + waves with sun/moon glints |
-| **Performance** | No heavy shadow maps, no post-processing stack, no raymarching — designed for phones and low-end PCs |
+Celestia is a mobile-focused shader pack that aims for an atmospheric look without relying on an expensive desktop-style rendering stack. This version rebuilds the missing shader stages and adds a working baseline for shadows, volumetric-style clouds and screen-space post effects.
 
-**Quality presets:** Low / Medium / High (start with Medium on most devices).
+## Visual features
 
----
+- **Volumetric cloud layer:** a short, quality-scaled ray-march through a cloud slab, with layered procedural density and sculpted, deliberately boxy lighting normals.
+- **Real-time sun shadows:** depth-map shadows with configurable quality, strength and a small multi-tap softening option.
+- **Godrays:** lightweight screen-space sun shafts, enabled separately from the cloud renderer.
+- **Bloom:** restrained bright-area extraction and a compact neighbourhood blur.
+- **Atmospheric sky:** day/night gradients, warm twilight, sun halo and a simple night-star layer.
+- **Basic material lighting:** texture and lightmap support, directional shading and alpha-tested shadow casters.
 
-## 📦 Compatibility
+The cloud renderer is a deliberately low-step volumetric approximation, not a physically complete atmosphere or a full-resolution cloud-shadow system. Godrays and bloom are screen-space effects and can show limitations around screen edges or occluders.
 
-Works with **Iris + Sodium** on multiple Minecraft versions (check [Iris on Modrinth](https://modrinth.com/mod/iris) for the exact Iris/Sodium pair for your game version).
+## Quality presets
 
-Typical support:
-- **1.21.x** (including 1.21.11 and recent 1.21 builds)
-- Newer Iris-supported releases as they appear on Modrinth
+| Preset | Intended use | Cloud steps | Shadows | Post effects |
+|---|---|---:|---|---|
+| Low | Mobile / battery-conscious | 5 | Reduced | Bloom only, subtle |
+| Medium | Balanced starting point | 7 | Softened | Godrays + bloom |
+| High | More visual detail | 10 | Higher quality | Stronger godrays + bloom |
 
-Always match **Iris + Sodium** versions to your Minecraft version from Modrinth.
+Start with **Low** on phones, then try Medium if frame pacing and temperature remain comfortable. The High preset can be demanding on mobile GPUs.
 
----
+## Compatibility
 
-## 📥 Installation
+Designed for **Minecraft Java Edition with Iris + Sodium**. The repository targets the GLSL 1.20 compatibility shader pipeline. Compatibility depends on the exact Minecraft, Iris and Sodium versions; the pack has not been verified across every 1.21.x release or every Android renderer.
 
-1. Install **Fabric** (or NeoForge) + **Sodium** + **Iris** for your Minecraft version (see Modrinth links above).
-2. Download the latest release ZIP (or clone this repo and zip the contents).
-3. Place the **`.zip`** (do **not** unzip) into your `shaderpacks` folder.
-4. In-game: **Options → Video Settings → Shader Packs → Celestia**.
-5. Open **Shader Pack Settings** and pick a quality preset.
+Android launchers such as Zalith and Pojav may expose different OpenGL capabilities. Results can vary by GPU driver. If a feature fails to compile or render on a particular device, switch to Low and report the launcher, Minecraft version, Iris version and renderer with the issue.
 
-Works great on Android launchers (Zalith, Pojav, etc.), Prism, official launcher, and more.
+## Install
 
----
+1. Install Fabric, Sodium and a matching Iris version.
+2. Download the shader ZIP from the repository's Releases page.
+3. Put the ZIP (do not extract it) in `.minecraft/shaderpacks`.
+4. Select **Celestia Mobile** in Video Settings → Shader Packs.
+5. Open Shader Pack Settings and select Low, Medium or High.
 
-## ⚙️ Settings Overview
+## Build locally
 
-- **Sky & Clouds** — style, quality, amount, speed, glow, haze
-- **Night Sky** — stars, Milky Way, comets, meteors, aurora
-- **Lighting** — sun directional strength, minimum light, **realtime shadows**, shadow strength, **coloured shadows**, **entity shadows**
-- **Water** — reflections, waves, reflection strength
-- **Glow** — emissive blocks
-- **The End** — black hole visuals
-
----
-
-## 🛠️ Building the pack yourself
+The `shaders/` directory is the shader-pack root. From the repository root:
 
 ```bash
-git clone https://github.com/hackfireoffical/Celestia.git
-cd Celestia
-# The shaders/ folder is the pack root. Zip it (or the whole repo contents) for distribution:
 zip -r Celestia_Mobile.zip shaders LICENSE README.md
 ```
 
-Drop `Celestia_Mobile.zip` into `shaderpacks`.
+## Current limitations
 
----
+- Clouds are rendered as a low-step volumetric sky layer; they do not yet cast a separate cloud-shadow pass onto the terrain.
+- Shadow filtering is a compact depth comparison approximation rather than a high-sample PCF implementation.
+- Godrays are screen-space and are not a full volumetric atmospheric scattering solution.
+- Water uses the shared material-lighting baseline; planar reflections and animated wave normals are not implemented in this rebuild.
+- This repository update has been statically checked, but still needs an in-game Iris test on desktop and Android before being called fully verified.
 
-## 📄 License
+## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE). Include the copyright and license notice in redistributed derivatives.
 
-You are free to use, modify, distribute, and sell derivatives, as long as you include the copyright notice and license.
+## Contributing
 
----
-
-## 🤝 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## ⭐ Support
-
-If you enjoy Celestia Mobile, please **star** the repo and consider sharing it!
-
-<p align="center">
-  <a href="https://github.com/hackfireoffical/Celestia/stargazers">
-    <img src="https://img.shields.io/github/stars/hackfireoffical/Celestia?style=for-the-badge&logo=github" alt="Star this repo"/>
-  </a>
-</p>
-
----
-
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/hackfireoffical">HackFire</a>
-</p>
+Bug reports and pull requests are welcome. Include your Minecraft, Iris, Sodium, launcher and renderer versions, plus a log or screenshot where possible.

@@ -176,15 +176,6 @@ jobs:
           print(f"PASS: {len(stages)} GLSL stages passed static compilation for matrix entry {__import__('os').environ['MC_VERSION']}")
           PY
 
-      - name: Upload per-version verification result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: celestia-check-${{ matrix.minecraft }}
-          path: |
-            shaders/
-          if-no-files-found: ignore
-          retention-days: 7
 
   package:
     name: Package shader ZIP
@@ -193,12 +184,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build installable shader ZIP
+      - name: Build one universal shader ZIP
+        env:
+          SUPPORTED_VERSIONS: ${{ join(fromJson(needs.discover.outputs.matrix).include.*.minecraft, ', ') }}
         run: |
           python - <<'PY'
           from pathlib import Path
+          import os
           from zipfile import ZIP_DEFLATED, ZipFile
-          files = [Path("LICENSE"), Path("README.md")]
+          Path("COMPATIBILITY.txt").write_text(
+              "Celestia Mobile — shared shader pack\n"
+              "Minecraft versions checked by this workflow run:\n"
+              + os.environ.get("SUPPORTED_VERSIONS", "") + "\n\n"
+              "This is one universal shader pack, not separate per-version builds.\n"
+              "Checks confirm Iris/Sodium release metadata and GLSL static compilation;\n"
+              "they do not replace in-game rendering tests.\n",
+              encoding="utf-8"
+          )
+          files = [Path("LICENSE"), Path("README.md"), Path("COMPATIBILITY.txt")]
           files += sorted(Path("shaders").rglob("*"))
           files = [p for p in files if p.is_file()]
           with ZipFile("Celestia_Mobile.zip", "w", ZIP_DEFLATED, compresslevel=9) as archive:

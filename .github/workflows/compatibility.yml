@@ -31,6 +31,7 @@ jobs:
         run: |
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
+          import re
           import urllib.request
 
           def versions(project):
@@ -58,7 +59,7 @@ jobs:
           lower = key("1.20.1")
           upper = key("26.3")
           selected = sorted(
-              (v for v in supported if v[0].isdigit() and lower <= key(v) <= upper),
+              (v for v in supported if re.fullmatch(r"\d+(?:\.\d+)*", v) and lower <= key(v) <= upper),
               key=key
           )
           if "1.20.1" not in selected:
@@ -68,7 +69,6 @@ jobs:
 
           print("matrix=" + json.dumps({"include": [{"minecraft": v} for v in selected]}))
           print("count=" + str(len(selected)))
-          print("Detected versions: " + ", ".join(selected))
           PY
 
   verify:

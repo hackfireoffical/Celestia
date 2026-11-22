@@ -1,0 +1,217 @@
+name: Celestia compatibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "shaders/**"
+      - ".github/workflows/compatibility.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "shaders/**"
+      - ".github/workflows/compatibility.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Discover supported Minecraft versions
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
+      count: ${{ steps.versions.outputs.count }}
+    steps:
+      - name: Read Iris and Sodium release metadata
+        id: versions
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import urllib.request
+
+          def versions(project):
+              req = urllib.request.Request(
+                  f"https://api.modrinth.com/v2/project/{project}/version",
+                  headers={"User-Agent": "CelestiaMobile/compatibility-check"}
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  releases = json.load(response)
+              found = set()
+              for release in releases:
+                  if "fabric" not in release.get("loaders", []):
+                      continue
+                  found.update(release.get("game_versions", []))
+              return found
+
+          iris = versions("iris")
+          sodium = versions("sodium")
+          supported = iris & sodium
+
+          # Explicitly constrain the range requested by the project.
+          def key(v):
+              return tuple(int(part) for part in v.split("."))
+
+          lower = key("1.20.1")
+          upper = key("26.3")
+          selected = sorted(
+              (v for v in supported if v[0].isdigit() and lower <= key(v) <= upper),
+              key=key
+          )
+          if "1.20.1" not in selected:
+              raise SystemExit("Iris + Sodium metadata did not report Minecraft 1.20.1.")
+          if "26.3" not in selected:
+              raise SystemExit("Iris + Sodium metadata did not report Minecraft 26.3.")
+
+          print("matrix=" + json.dumps({"include": [{"minecraft": v} for v in selected]}))
+          print("count=" + str(len(selected)))
+          print("Detected versions: " + ", ".join(selected))
+          PY
+
+  verify:
+    name: "${{ matrix.minecraft }} — Iris/Sodium + shader validation"
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Iris and Sodium support for this exact version
+        env:
+          MC_VERSION: ${{ matrix.minecraft }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+
+          version = os.environ["MC_VERSION"]
+          headers = {"User-Agent": "CelestiaMobile/compatibility-check"}
+
+          def has_fabric_build(project):
+              req = urllib.request.Request(
+                  f"https://api.modrinth.com/v2/project/{project}/version",
+                  headers=headers
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  releases = json.load(response)
+              matches = [
+                  r for r in releases
+                  if version in r.get("game_versions", [])
+                  and "fabric" in r.get("loaders", [])
+              ]
+              if not matches:
+                  raise SystemExit(f"No Fabric release found for {project} on Minecraft {version}")
+              newest = matches[0]
+              print(f"PASS: {project} has a Fabric build for {version}: {newest['version_number']}")
+
+          has_fabric_build("iris")
+          has_fabric_build("sodium")
+          print(f"PASS: Iris + Sodium release metadata supports Minecraft {version}")
+          PY
+
+      - name: Install GLSL validator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+
+      - name: Compile every shader stage after expanding pack includes
+        env:
+          MC_VERSION: ${{ matrix.minecraft }}
+        run: |
+          python - <<'PY'
+          import pathlib, re, subprocess, tempfile
+
+          root = pathlib.Path("shaders").resolve()
+          include_re = re.compile(r'^\s*#include\s+["<]([^">]+)[">]\s*$')
+
+          def expand(path, stack=()):
+              path = path.resolve()
+              if path in stack:
+                  raise RuntimeError("Circular GLSL include: " + str(path))
+              lines = []
+              for line in path.read_text(encoding="utf-8").splitlines():
+                  match = include_re.match(line)
+                  if match:
+                      include = match.group(1)
+                      target = (root / include.lstrip("/")) if include.startswith("/") else (path.parent / include)
+                      if not target.is_file():
+                          raise FileNotFoundError(f"{path}: missing include {include}")
+                      lines.append(expand(target, stack + (path,)))
+                  else:
+                      lines.append(line)
+              return "\n".join(lines) + "\n"
+
+          stages = sorted(
+              p for p in root.rglob("*")
+              if p.is_file() and p.suffix in (".vsh", ".fsh")
+              and "lib" not in p.relative_to(root).parts
+          )
+          if not stages:
+              raise SystemExit("No shader stages found")
+
+          failed = []
+          with tempfile.TemporaryDirectory() as tmp:
+              for stage in stages:
+                  source = expand(stage)
+                  temp = pathlib.Path(tmp) / (stage.name + (".vert" if stage.suffix == ".vsh" else ".frag"))
+                  temp.write_text(source, encoding="utf-8")
+                  shader_type = "vert" if stage.suffix == ".vsh" else "frag"
+                  result = subprocess.run(
+                      ["glslangValidator", "-S", shader_type, str(temp)],
+                      text=True, capture_output=True
+                  )
+                  if result.returncode:
+                      failed.append((stage, result.stdout + result.stderr))
+                      print(f"FAIL: {stage}")
+                      print(result.stdout + result.stderr)
+                  else:
+                      print(f"PASS: {stage}")
+
+          if failed:
+              raise SystemExit(f"{len(failed)} shader stage(s) failed for validation run {__import__('os').environ['MC_VERSION']}")
+          print(f"PASS: {len(stages)} GLSL stages passed static compilation for matrix entry {__import__('os').environ['MC_VERSION']}")
+          PY
+
+      - name: Upload per-version verification result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: celestia-check-${{ matrix.minecraft }}
+          path: |
+            shaders/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  package:
+    name: Package shader ZIP
+    needs: [discover, verify]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build installable shader ZIP
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+          files = [Path("LICENSE"), Path("README.md")]
+          files += sorted(Path("shaders").rglob("*"))
+          files = [p for p in files if p.is_file()]
+          with ZipFile("Celestia_Mobile.zip", "w", ZIP_DEFLATED, compresslevel=9) as archive:
+              for path in files:
+                  archive.write(path, path.as_posix())
+          with ZipFile("Celestia_Mobile.zip") as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP integrity failure: {bad}")
+          print(f"Packaged {len(files)} files.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Celestia-Mobile
+          path: Celestia_Mobile.zip
+          retention-days: 30

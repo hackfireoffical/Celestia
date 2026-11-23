@@ -6,6 +6,10 @@
 
 ---
 
+## 🔖 Releases & versions
+
+One universal zip covers **Minecraft 1.20.1 → 26.3** (Iris, or OptiFine/Oculus on older versions). Push a tag like `v1.2.0` to build, create a GitHub release and publish to Modrinth (needs the `MODRINTH_TOKEN` repo secret). The workflow tags every release version in that range automatically.
+
 ## What is Celestia?
 
 Celestia is a mobile-focused shader pack that aims for an atmospheric look without relying on an expensive desktop-style rendering stack. This version rebuilds the missing shader stages and adds a working baseline for shadows, volumetric-style clouds and screen-space post effects.

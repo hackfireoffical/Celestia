@@ -1,0 +1,84 @@
+name: Build Celestia (universal 1.20.1 - 26.3)
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish_modrinth:
+        description: "Publish to Modrinth (needs MODRINTH_TOKEN secret)"
+        type: boolean
+        default: false
+      version_number:
+        description: "Version number (default: 0.0.0-<short sha>)"
+        type: string
+      mc_to:
+        description: "Highest Minecraft version to tag on Modrinth"
+        type: string
+        default: "26.3"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install glslang
+        run: sudo apt-get update && sudo apt-get install -y glslang-tools
+      - name: Compile all shaders (default, low, high, effects-off)
+        run: python3 tools/validate_shaders.py
+
+  package:
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}";
+          elif [[ -n "${{ inputs.version_number }}" ]]; then V="${{ inputs.version_number }}";
+          else V="0.0.0-${GITHUB_SHA::7}"; fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - name: Zip (shaders/ must sit at the zip root, do not unzip in-game)
+        run: zip -r "Celestia_Mobile_${{ steps.ver.outputs.version }}.zip" shaders LICENSE README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Celestia_Mobile_${{ steps.ver.outputs.version }}
+          path: Celestia_Mobile_*.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+
+  modrinth:
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish_modrinth
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish to Modrinth (every release from 1.20.1 up to MC_TO)
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MC_FROM: "1.20.1"
+          MC_TO: ${{ inputs.mc_to || '26.3' }}
+        run: python3 tools/publish_modrinth.py dist/Celestia_Mobile_${{ needs.package.outputs.version }}.zip "${{ needs.package.outputs.version }}"

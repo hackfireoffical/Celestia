@@ -21,3 +21,5 @@
 #define BLOOM
 #define BLOOM_STRENGTH 0.28       //[0.0 0.15 0.28 0.4 0.55]
 #define BLOOM_THRESHOLD 0.80      //[0.60 0.70 0.80 0.90]
+// ---- Color grading
+#define COLOR_SCHEME 0            //[0 1 2 3 4]

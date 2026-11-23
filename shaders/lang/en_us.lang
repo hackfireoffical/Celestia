@@ -26,3 +26,10 @@ option.GODRAY_SAMPLES=Godray Quality (samples)
 option.BLOOM=Bloom
 option.BLOOM_STRENGTH=Bloom Strength
 option.BLOOM_THRESHOLD=Bloom Threshold
+
+option.COLOR_SCHEME=Color Scheme
+value.COLOR_SCHEME.0=Natural
+value.COLOR_SCHEME.1=Warm Golden
+value.COLOR_SCHEME.2=Cool Moonlit
+value.COLOR_SCHEME.3=Pastel Cozy
+value.COLOR_SCHEME.4=Vivid

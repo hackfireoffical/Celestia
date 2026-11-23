@@ -1,4 +1,4 @@
 #version 120
-/* DRAWBUFFERS:0 */
+/* DRAWBUFFERS:01 */
 #define ENTITY
 #include "/lib/lit.fsh"

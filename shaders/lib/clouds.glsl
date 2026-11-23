@@ -1,47 +1,84 @@
-// Low-step volumetric slab. Cellular erosion creates a chunky, sculpted cloud edge.
-float cloudDensity(vec3 p){
-    float broad=cnoise3(p*0.72);
-    float detail=cnoise3(p*1.75+vec3(7.1,2.4,4.8));
-#if CLOUD_QUALITY >= 2
-    detail=detail*0.65+cnoise3(p*3.4+vec3(2.0,8.0,1.0))*0.35;
-#endif
-    float shape=broad*0.78+detail*0.22;
-    float vertical=1.0-smoothstep(0.02,0.34,abs(p.y));
-    return smoothstep(0.57-CLOUD_AMOUNT*0.22,0.76-CLOUD_AMOUNT*0.12,shape)*vertical;
-}
-vec3 renderVolumetricClouds(vec3 rd, vec3 sunDir, float time){
-#if CLOUD_MODE == 0
-    return vec3(0.0);
-#else
-    if(rd.y<0.035) return vec3(0.0);
-    float t0=(0.48-rd.y*0.04)/max(rd.y,0.035);
-    float t1=(0.68-rd.y*0.04)/max(rd.y,0.035);
-    vec3 drift=vec3(time*0.000018*CLOUD_SPEED,0.0,time*0.000009*CLOUD_SPEED);
-    float trans=1.0; vec3 accum=vec3(0.0);
+// Boxy volumetric clouds ("Cloud 2" look): mounds of stacked cubes marched with a 3D DDA.
+// Every cube has a crisp face normal (top lit, sides dimmer, undersides dark), thickness
+// gives soft light absorption, and a one-cell sun probe gives cheap self-shadowing.
+// Needs common.glsl + settings.glsl.
+#define CLOUD_LAYERS 3.0
+#define CLOUD_BASE 120.0
+#define CLOUD_CELL_Y 7.0
+
 #if CLOUD_QUALITY == 1
-    const int STEPS=5;
+const int CLOUD_STEPS = 10;
 #elif CLOUD_QUALITY == 2
-    const int STEPS=7;
+const int CLOUD_STEPS = 16;
 #else
-    const int STEPS=10;
+const int CLOUD_STEPS = 24;
 #endif
-    float stepLen=(t1-t0)/float(STEPS);
-    for(int i=0;i<STEPS;i++){
-        float t=t0+(float(i)+0.5)*stepLen;
-        vec3 p=vec3(rd.xz*(t*6.0),0.0).xzy+drift; p.y=(t-t0)/max(t1-t0,0.0001)-0.5;
-        float d=cloudDensity(p);
-        if(d>0.025){
-            // Approximate normal from density gradient: deliberately crisp / blocky.
-            vec3 e=vec3(0.018,0.018,0.018);
-            vec3 n=normalize(vec3(cloudDensity(p+e.xyy)-cloudDensity(p-e.xyy),cloudDensity(p+e.yxy)-cloudDensity(p-e.yxy),cloudDensity(p+e.yyx)-cloudDensity(p-e.yyx))+vec3(0.0001));
-            float sunlit=max(dot(n,normalize(sunDir)),0.0);
-            float phase=0.35+0.65*max(dot(rd,normalize(sunDir)),0.0);
-            vec3 light=mix(vec3(0.34,0.42,0.56),vec3(1.0,0.88,0.68),clamp(0.22+sunlit*0.72+phase*0.18,0.0,1.0));
-            float a=d*0.34;
-            accum+=trans*a*light;
+
+// Number of filled cubes stacked in one column (0 = clear sky).
+float cloudLayersAt(vec2 col, float amount){
+    float h=cnoise2(col*0.17+vec2(11.3,4.7))*0.68+cnoise2(col*0.43+vec2(2.1,9.4))*0.24+hash12(col)*0.08;
+    float thr=0.74-amount*0.45;
+    if(h<=thr) return 0.0;
+    return clamp(floor((h-thr)*CLOUD_LAYERS*9.0)+1.0,1.0,CLOUD_LAYERS);
+}
+
+// 1 when the neighbouring cube towards the sun is solid (this cube is in cloud shade).
+float cloudSunShadow(vec3 c, vec3 sunDir, float amount){
+    vec3 q=c+floor(sunDir*1.5+0.5);
+    if(q.y<0.0||q.y>=CLOUD_LAYERS) return 0.0;
+    return step(q.y+0.5,cloudLayersAt(q.xz,amount));
+}
+
+// returns premultiplied colour in rgb, coverage in a
+vec4 renderBoxyClouds(vec3 rd, vec3 sunDir, float time, float day, float twil, float rain){
+#if CLOUD_MODE == 0
+    return vec4(0.0);
+#else
+    float fade=smoothstep(0.045,0.24,rd.y);
+    if(fade<=0.0) return vec4(0.0);
+    float amount=clamp(CLOUD_AMOUNT+rain*0.30,0.0,0.95);
+    vec3 cs=vec3(CLOUD_CELL,CLOUD_CELL_Y,CLOUD_CELL);
+    vec2 drift=vec2(1.1,0.45)*(time*CLOUD_SPEED);
+
+    // Enter the slab at its underside, then walk cube to cube.
+    vec3 p=rd*(CLOUD_BASE/rd.y); p.y=0.0001; p.xz+=drift;
+    vec3 c=floor(p/cs);
+    vec3 fr=p/cs-c;
+    vec3 stp=vec3(rd.x>=0.0?1.0:-1.0,1.0,rd.z>=0.0?1.0:-1.0);
+    vec3 inv=1.0/max(abs(rd),vec3(0.0001));
+    vec3 tDelta=cs*inv;
+    vec3 tMax=mix(fr,1.0-fr,step(0.0,stp))*cs*inv;
+
+    vec3 ambient=mix(vec3(0.11,0.14,0.26),vec3(0.60,0.68,0.84),day);
+    ambient=mix(ambient,vec3(0.66,0.52,0.52),twil*0.4);
+    vec3 sunC=mix(vec3(1.05,0.98,0.88),vec3(1.0,0.54,0.26),twil)*day;
+    ambient=mix(ambient,vec3(dot(ambient,vec3(0.3333)))*0.8,rain*0.7);
+    sunC*=1.0-rain*0.8;
+    float silver=pow(max(dot(rd,sunDir),0.0),7.0);
+
+    vec3 n=vec3(0.0,-1.0,0.0);
+    float s=0.0; float trans=1.0; vec3 col=vec3(0.0);
+    float layers=cloudLayersAt(c.xz,amount);
+    for(int i=0;i<CLOUD_STEPS;i++){
+        if(c.y>=CLOUD_LAYERS) break;
+        float sNext=min(tMax.x,min(tMax.y,tMax.z));
+        if(c.y<layers){
+            float a=1.0-exp(-(sNext-s)*0.085);
+            float ndl=max(dot(n,sunDir),0.0);
+            float sh=cloudSunShadow(c,sunDir,amount);
+            vec3 lit=ambient*(0.58+0.42*(n.y*0.5+0.5))
+                    +sunC*(ndl*(1.0-sh*0.9)+silver*0.30*(1.0-sh*0.6));
+            col+=trans*a*lit;
             trans*=1.0-a;
+            if(trans<0.04) break;
         }
+        s=sNext;
+        bool newCol=false;
+        if(tMax.x<=tMax.y&&tMax.x<=tMax.z){ c.x+=stp.x; tMax.x+=tDelta.x; n=vec3(-stp.x,0.0,0.0); newCol=true; }
+        else if(tMax.y<=tMax.z){ c.y+=1.0; tMax.y+=tDelta.y; n=vec3(0.0,-1.0,0.0); }
+        else { c.z+=stp.z; tMax.z+=tDelta.z; n=vec3(0.0,0.0,-stp.z); newCol=true; }
+        if(newCol) layers=cloudLayersAt(c.xz,amount);
     }
-    return accum;
+    return vec4(col*fade,(1.0-trans)*fade);
 #endif
 }

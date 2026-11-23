@@ -1,2 +1,3 @@
 #version 120
-void main(){ gl_Position=ftransform(); gl_TexCoord[0]=gl_MultiTexCoord0; }
+varying vec2 texcoord;
+void main(){ gl_Position=ftransform(); texcoord=gl_MultiTexCoord0.st; }

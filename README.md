@@ -37,7 +37,7 @@ Start with **Low** on phones, then try Medium if frame pacing and temperature re
 
 ## Compatibility
 
-Designed for **Minecraft Java Edition with Iris + Sodium**. The repository targets the GLSL 1.20 compatibility shader pipeline. Compatibility depends on the exact Minecraft, Iris and Sodium versions; the pack has not been verified across every 1.21.x release or every Android renderer.
+Designed for **Minecraft Java Edition with Iris + Sodium**. The repository targets the GLSL 1.20 compatibility shader pipeline. Compatibility depends on the exact Minecraft, Iris and Sodium versions. See the automated compatibility workflow below for the versions whose Iris/Sodium metadata and GLSL static checks pass; that is not a substitute for in-game rendering tests.
 
 Android launchers such as Zalith and Pojav may expose different OpenGL capabilities. Results can vary by GPU driver. If a feature fails to compile or render on a particular device, switch to Low and report the launcher, Minecraft version, Iris version and renderer with the issue.
 
@@ -56,6 +56,19 @@ The `shaders/` directory is the shader-pack root. From the repository root:
 ```bash
 zip -r Celestia_Mobile.zip shaders LICENSE README.md
 ```
+
+## Automated compatibility checks
+
+GitHub Actions runs the compatibility workflow whenever shader files or this README change. It discovers the Minecraft versions that currently have both **Iris and Sodium Fabric releases**, limited to **1.20.1 through 26.3**, then checks every matching version against the same shared shader source. Celestia is not split into per-version shader folders or separate downloads: one universal ZIP is produced after the complete version matrix passes.
+
+For each version, the workflow:
+- Confirms that Modrinth lists a Fabric release of Iris and Sodium for that exact Minecraft version.
+- Expands the shader pack's shared GLSL includes and statically compiles every vertex and fragment stage.
+- Builds one installable `Celestia_Mobile.zip` artifact after the complete matrix passes. The ZIP includes a `COMPATIBILITY.txt` file listing the Minecraft versions checked by that run.
+
+**What PASS means:** the loader ecosystem publishes matching releases and Celestia's shader stages pass GLSL static compilation. This is a useful automated compatibility gate, but it is **not a full Minecraft launch or visual-render test**. It cannot prove that the shader looks correct in-game, or that every GPU/Android driver supports every effect. Those still need manual testing in Iris on the target Minecraft version and device.
+
+To run it manually, open the repository's **Actions → Celestia compatibility → Run workflow**. The single universal ZIP is available in the successful run's **Artifacts** section. There are no separate per-version ZIPs.
 
 ## Current limitations
 

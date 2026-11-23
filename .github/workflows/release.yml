@@ -1,10 +1,9 @@
-name: Build Celestia (universal 1.20.1 - 26.3)
+name: Release Celestia (universal 1.20.1 - 26.3)
 
 on:
+  # Per-push compatibility checks live in compatibility.yml; this one ships releases.
   push:
-    branches: [main]
     tags: ["v*"]
-  pull_request:
   workflow_dispatch:
     inputs:
       publish_modrinth:

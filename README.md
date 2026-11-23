@@ -12,28 +12,29 @@ One universal zip covers **Minecraft 1.20.1 → 26.3** (Iris, or OptiFine/Oculus
 
 ## What is Celestia?
 
-Celestia is a mobile-focused shader pack that aims for an atmospheric look without relying on an expensive desktop-style rendering stack. This version rebuilds the missing shader stages and adds a working baseline for shadows, volumetric-style clouds and screen-space post effects.
+Celestia is a mobile-focused shader pack that aims for an atmospheric look without relying on an expensive desktop-style rendering stack. It ships boxy volumetric clouds, real-time shadows, godrays, bloom and selectable color schemes.
 
 ## Visual features
 
-- **Volumetric cloud layer:** a short, quality-scaled ray-march through a cloud slab, with layered procedural density and sculpted, deliberately boxy lighting normals.
-- **Real-time sun shadows:** depth-map shadows with configurable quality, strength and a small multi-tap softening option.
-- **Godrays:** lightweight screen-space sun shafts, enabled separately from the cloud renderer.
-- **Bloom:** restrained bright-area extraction and a compact neighbourhood blur.
-- **Atmospheric sky:** day/night gradients, warm twilight, sun halo and a simple night-star layer.
-- **Basic material lighting:** texture and lightmap support, directional shading and alpha-tested shadow casters.
+- **Boxy volumetric clouds:** mounds of stacked cubes marched with a 3D DDA. Every cube has a crisp face normal (bright tops, dim sides, dark undersides), a silver sun-edge, one-cell self-shadowing and rain darkening. Cube size is adjustable.
+- **Real-time shadows:** shadow map with distortion (sharper near you), rotated-disc soft edges (1/4/8 taps), normal-offset bias and cool-tinted shade. Sun and moon both cast shadows.
+- **Godrays:** occlusion-based screen-space shafts toward the sun or moon, cut by terrain and trees, faded in caves and rain.
+- **Bloom:** soft bright-area glow plus an emissive mask, so torches, lava and glowstone glow properly.
+- **Color schemes:** Natural, Warm Golden, Cool Moonlit, Pastel Cozy and Vivid grades (Shader Pack Settings → Color Scheme).
+- **Atmospheric sky:** day/night gradients, warm twilight, sun halo and twinkling stars.
+- **Lighting:** correct lightmap handling (dark caves), directional shading, emissive blocks and a lit hand.
 
-The cloud renderer is a deliberately low-step volumetric approximation, not a physically complete atmosphere or a full-resolution cloud-shadow system. Godrays and bloom are screen-space effects and can show limitations around screen edges or occluders.
+Godrays and bloom are screen-space effects and can show limitations around screen edges or occluders. Everything is a low-step approximation tuned for phones, not a full atmosphere renderer.
 
 ## Quality presets
 
 | Preset | Intended use | Cloud steps | Shadows | Post effects |
 |---|---|---:|---|---|
-| Low | Mobile / battery-conscious | 5 | Reduced | Bloom only, subtle |
-| Medium | Balanced starting point | 7 | Softened | Godrays + bloom |
-| High | More visual detail | 10 | Higher quality | Stronger godrays + bloom |
+| Low | Mobile / battery-conscious | 10 | 1 tap | Godrays (6 samples), no bloom |
+| Medium | Balanced starting point | 16 | 4-tap soft | Godrays (10) + bloom |
+| High | More visual detail | 24 | 8-tap soft | Stronger godrays (14) + bloom |
 
-Start with **Low** on phones, then try Medium if frame pacing and temperature remain comfortable. The High preset can be demanding on mobile GPUs.
+Start with **Low** on phones, then try Medium if frame pacing and temperature remain comfortable. High can be demanding on mobile GPUs.
 
 ## Compatibility
 
